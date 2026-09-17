@@ -1,0 +1,34 @@
+services:
+  job-service:
+    image: python:3.13-slim
+    working_dir: /app
+    volumes:
+      - ./job_service:/app
+    command: sh -c "pip install --no-cache-dir -r requirements.txt && uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    environment:
+      PROCESSOR_URL: http://processor-service:8001
+      AUDIT_URL: http://audit-service:8002
+    ports:
+      - "8000:8000"
+  processor-service:
+    image: python:3.13-slim
+    working_dir: /app
+    volumes:
+      - ./processor_service:/app
+    command: sh -c "pip install --no-cache-dir -r requirements.txt && uvicorn app.main:app --host 0.0.0.0 --port 8001"
+    environment:
+      JOB_EVENTS_WS_URL: ws://job-service:8000/ws/events
+      MAX_CONCURRENT_JOBS: 10
+      MAX_CONCURRENT_DOCUMENTS: 32
+    depends_on:
+      - job-service
+    ports:
+      - "8001:8001"
+  audit-service:
+    image: python:3.13-slim
+    working_dir: /app
+    volumes:
+      - ./audit_service:/app
+    command: sh -c "pip install --no-cache-dir -r requirements.txt && uvicorn app.main:app --host 0.0.0.0 --port 8002"
+    ports:
+      - "8002:8002"

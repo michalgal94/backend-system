@@ -1,0 +1,3 @@
+-r job_service/requirements.txt
+-r processor_service/requirements-dev.txt
+-r audit_service/requirements-dev.txt

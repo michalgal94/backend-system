@@ -1,0 +1,5 @@
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+TA9_Backend_Home_Assignment.docx
