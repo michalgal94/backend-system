@@ -5,7 +5,7 @@ from .models import Job, JobStatus
 
 
 class InMemoryJobRepository:
-    """Replace this small interface with a database-backed repository in production."""
+    # Should be replaced with durable storage in production
 
     def __init__(self) -> None:
         self._jobs: dict[UUID, Job] = {}
@@ -37,6 +37,7 @@ class InMemoryJobRepository:
         if job is None:
             return None
 
+        # Terminal jobs never move backwards when late or duplicate events are received
         if event_type == "job.started":
             if job.status is not JobStatus.PENDING:
                 return None

@@ -28,7 +28,6 @@ class CreateJobRequest(BaseModel):
 
 
 class UpdateJobMetadataRequest(BaseModel):
-    """Client-owned metadata only; processing state is managed by Processor events."""
 
     model_config = ConfigDict(extra="forbid")
 

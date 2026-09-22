@@ -1,7 +1,9 @@
+import os
 from contextlib import asynccontextmanager
 from uuid import UUID
 
 from fastapi import FastAPI, HTTPException, status
+from fastapi.middleware.cors import CORSMiddleware
 
 from .models import AuditRecord
 from .repository import InMemoryAuditRepository
@@ -14,6 +16,12 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Audit Service", version="1.0.0", lifespan=lifespan)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[os.getenv("UI_ORIGIN", "http://localhost:8000")],
+    allow_methods=["GET"],
+    allow_headers=[],
+)
 
 
 @app.get("/health")

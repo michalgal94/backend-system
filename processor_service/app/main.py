@@ -7,6 +7,7 @@ from uuid import UUID, uuid4
 
 import websockets
 from fastapi import BackgroundTasks, FastAPI, status
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from .analyzer import analyze_document
@@ -36,10 +37,17 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Processor Service", version="1.0.0", lifespan=lifespan)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[os.getenv("UI_ORIGIN", "http://localhost:8000")],
+    allow_methods=["GET"],
+    allow_headers=[],
+)
 
 
 async def send_event(event_type: str, job_id: UUID, payload: dict | None = None) -> None:
     event = {"event_id": str(uuid4()), "type": event_type, "job_id": str(job_id), "occurred_at": datetime.now(timezone.utc).isoformat(), "payload": payload}
+    # Delivery is best-effort: retries help temporary outages but do not guarantee persistence
     for attempt in range(3):
         try:
             async with websockets.connect(JOB_EVENTS_WS_URL, open_timeout=10) as socket:
@@ -64,6 +72,7 @@ async def process_job(request: ProcessRequest) -> None:
             cursor = 0
             cursor_lock = asyncio.Lock()
 
+            # A fixed worker pool avoids creating up to 1000 tasks for one job
             async def worker() -> None:
                 nonlocal cursor
                 while True:

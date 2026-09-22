@@ -2,10 +2,12 @@ import asyncio
 import logging
 import os
 from contextlib import asynccontextmanager
+from pathlib import Path
 from uuid import UUID
 
 import httpx
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, status
+from fastapi.staticfiles import StaticFiles
 
 from .models import AuditSummary, CreateJobRequest, Job, JobStatus, ProcessingEvent, UpdateJobMetadataRequest
 from .repository import InMemoryJobRepository
@@ -25,10 +27,11 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Job Service", version="1.0.0", lifespan=lifespan)
+app.mount("/ui", StaticFiles(directory=Path(__file__).parent.parent / "ui", html=True), name="ui")
 
 
 async def report_audit(job: Job) -> None:
-    """Audit is a best-effort bonus integration and never changes job processing outcome."""
+    # Audit is a best-effort integration and never changes the processing outcome
     if job.status not in {JobStatus.COMPLETED, JobStatus.FAILED}:
         return
     summary = AuditSummary(
@@ -109,6 +112,7 @@ async def receive_events(websocket: WebSocket) -> None:
     try:
         while True:
             event = ProcessingEvent.model_validate_json(await websocket.receive_text())
+            # Serialize event de-duplication because multiple Processor connections may arrive together
             async with app.state.event_lock:
                 if event.event_id in app.state.event_ids:
                     continue

@@ -345,10 +345,10 @@ Trade-offs:
 - Authentication, authorization, persistent storage, durable messaging, and deployment concerns are not implemented.
 - The system is intentionally not suitable for multi-instance or large-scale deployment as-is.
 - Some operational capabilities are documented in the improvement section rather than implemented.
-
+?
 # Concurrency and Performance
 
-The assignment target is at least 10 concurrent jobs with up to 1,000 documents each. Processor Service uses bounded asynchronous work:
+The assignment target is at least 10 concurrent jobs with up to 1000 documents each. Processor Service uses bounded asynchronous work:
 
 - a job semaphore allows at most 10 active jobs
 - each active job starts at most 8 document workers
@@ -388,7 +388,6 @@ This avoids creating an unbounded number of tasks for 10,000 documents. The trad
 - Authorization and role-based access control for users who create, inspect, update, or delete jobs
 - Structured JSON logging, correlation IDs propagated through REST and WebSocket events, distributed tracing, metrics, dashboards and alerts
 - Worker processes or a distributed worker tier for CPU-heavy document analysis
-- Frontend UI for user-friendly interaction with the system
 - External database for persistent and scalable data storage
 - REST/WebSocket integration tests, concurrency tests, load tests, and fault-injection tests
 

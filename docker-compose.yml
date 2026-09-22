@@ -20,6 +20,7 @@ services:
       JOB_EVENTS_WS_URL: ws://job-service:8000/ws/events
       MAX_CONCURRENT_JOBS: 10
       MAX_CONCURRENT_DOCUMENTS: 32
+      UI_ORIGIN: http://localhost:8000
     depends_on:
       - job-service
     ports:
@@ -30,5 +31,7 @@ services:
     volumes:
       - ./audit_service:/app
     command: sh -c "pip install --no-cache-dir -r requirements.txt && uvicorn app.main:app --host 0.0.0.0 --port 8002"
+    environment:
+      UI_ORIGIN: http://localhost:8000
     ports:
       - "8002:8002"

@@ -4,7 +4,7 @@ from .models import AuditRecord
 
 
 class InMemoryAuditRepository:
-    """An upsert-style repository; replace it with durable storage in production."""
+    # Should be replaced with durable storage in production
 
     def __init__(self) -> None:
         self._records: dict[UUID, AuditRecord] = {}
