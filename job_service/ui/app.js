@@ -69,8 +69,9 @@ async function selectJob(id, updateList = true) {
     byId('details-card').hidden = false;
     byId('detail-title').textContent = job.title || 'Untitled job';
     byId('detail-id').textContent = `Job ID: ${job.id}`;
-    byId('detail-status').replaceWith(statusElement(job.status));
-    byId('detail-status').id = 'detail-status';
+    const statusBadge = statusElement(job.status);
+    statusBadge.id = 'detail-status';
+    byId('detail-status').replaceWith(statusBadge);
     byId('edit-title').value = job.title || '';
     byId('edit-tags').value = job.tags.join(', ');
     const error = byId('detail-error'); error.hidden = !job.error; error.textContent = job.error || '';
