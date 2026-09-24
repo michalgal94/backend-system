@@ -378,6 +378,10 @@ This avoids creating an unbounded number of tasks for 10,000 documents. The trad
 
 # Production Improvements
 
+## AWS Deployment Blueprint
+
+The repository includes a deploy-ready AWS/EKS blueprint in [deployment/aws](deployment/aws). It provides Dockerfiles, GitHub Actions CI, EKS deployments, ALB/Cognito ingress, HPA, Pod disruption budget, secret templates, and guidance for Amazon MQ RabbitMQ and ElastiCache Redis. It is intentionally not a claim of a live AWS deployment: the current local assignment flow remains dependency-free, while a production migration must move in-memory job state to shared durable storage before scaling Job Service replicas.
+
 - Persistent storage for jobs, document results, audit records, and idempotency keys
 - A transactional outbox and a durable message broker such as RabbitMQ, Kafka, or SQS
 - Durable retries, dead-letter queues, replay support, and persistent event deduplication

@@ -1,0 +1,47 @@
+name: Deploy to EKS
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'job_service/**'
+      - 'processor_service/**'
+      - 'audit_service/**'
+      - 'deployment/aws/**'
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  AWS_REGION: ${{ vars.AWS_REGION }}
+  EKS_CLUSTER_NAME: ${{ vars.EKS_CLUSTER_NAME }}
+  ECR_REGISTRY: ${{ vars.ECR_REGISTRY }}
+
+jobs:
+  deploy:
+    environment: production
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+      - uses: aws-actions/amazon-ecr-login@v2
+      - name: Build and push immutable images
+        run: |
+          for service in job_service processor_service audit_service; do
+            image_name=$(echo "$service" | tr '_' '-')
+            docker build -t "$ECR_REGISTRY/$image_name:$GITHUB_SHA" "./$service"
+            docker push "$ECR_REGISTRY/$image_name:$GITHUB_SHA"
+          done
+      - name: Configure kubectl
+        run: aws eks update-kubeconfig --region "$AWS_REGION" --name "$EKS_CLUSTER_NAME"
+      - name: Apply manifests and deploy this revision
+        run: |
+          sed -e "s|REPLACE_AWS_ACCOUNT.dkr.ecr.REPLACE_REGION.amazonaws.com|$ECR_REGISTRY|g" -e "s|REPLACE_TAG|$GITHUB_SHA|g" deployment/aws/k8s/application.yaml | kubectl apply -f -
+          kubectl apply -f deployment/aws/k8s/ingress-and-scaling.yaml
+          kubectl rollout status deployment/job-service -n document-processing --timeout=180s
+          kubectl rollout status deployment/processor-service -n document-processing --timeout=180s

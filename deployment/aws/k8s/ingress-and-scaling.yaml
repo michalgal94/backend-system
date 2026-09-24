@@ -1,0 +1,46 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: document-processing
+  namespace: document-processing
+  annotations:
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
+    alb.ingress.kubernetes.io/certificate-arn: REPLACE_ACM_CERTIFICATE_ARN
+    alb.ingress.kubernetes.io/auth-type: cognito
+    alb.ingress.kubernetes.io/auth-idp-cognito: '{"UserPoolArn":"REPLACE_USER_POOL_ARN","UserPoolClientId":"REPLACE_CLIENT_ID","UserPoolDomain":"REPLACE_COGNITO_DOMAIN"}'
+    alb.ingress.kubernetes.io/auth-on-unauthenticated-request: authenticate
+    alb.ingress.kubernetes.io/load-balancer-attributes: routing.http2.enabled=true
+spec:
+  rules:
+    - host: REPLACE_DOMAIN
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service: { name: job-service, port: { number: 8000 } }
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: processor-service
+  namespace: document-processing
+spec:
+  scaleTargetRef: { apiVersion: apps/v1, kind: Deployment, name: processor-service }
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource: { name: cpu, target: { type: Utilization, averageUtilization: 70 } }
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: job-service
+  namespace: document-processing
+spec:
+  minAvailable: 1
+  selector: { matchLabels: { app: job-service } }
